@@ -59,11 +59,9 @@ def progress_bar(args: TrainArgs, progress: mp.Value):
         if os.path.exists(os.path.join(args.save_dir, 'verbose.log')):
             with open(os.path.join(args.save_dir, 'verbose.log'), 'r') as f:
                 content = f.read()
-                if 'Epoch ' + str(current_epoch + 1) in content:
+                if f'Epoch {str(current_epoch + 1)}' in content:
                     current_epoch += 1
                     progress.value = (current_epoch + 1) * 100 / args.epochs
-        else:
-            pass
         time.sleep(0)
 
 
@@ -380,15 +378,19 @@ def predict():
     invalid_smiles_warning = 'Invalid SMILES String'
     preds = [pred if pred is not None else [invalid_smiles_warning] * num_tasks for pred in preds]
 
-    return render_predict(predicted=True,
-                          smiles=smiles,
-                          num_smiles=min(10, len(smiles)),
-                          show_more=max(0, len(smiles)-10),
-                          task_names=task_names,
-                          num_tasks=len(task_names),
-                          preds=preds,
-                          warnings=["List contains invalid SMILES strings"] if None in preds else None,
-                          errors=["No SMILES strings given"] if len(preds) == 0 else None)
+    return render_predict(
+        predicted=True,
+        smiles=smiles,
+        num_smiles=min(10, len(smiles)),
+        show_more=max(0, len(smiles) - 10),
+        task_names=task_names,
+        num_tasks=len(task_names),
+        preds=preds,
+        warnings=["List contains invalid SMILES strings"]
+        if None in preds
+        else None,
+        errors=["No SMILES strings given"] if not preds else None,
+    )
 
 
 @app.route('/download_predictions')

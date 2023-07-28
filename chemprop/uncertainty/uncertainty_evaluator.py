@@ -135,14 +135,14 @@ class NLLRegressionEvaluator(UncertaintyEvaluator):
                 task_preds = preds[i][task_mask]
                 task_targets = targets[i][task_mask]
                 task_nll = np.log(2 * np.pi * task_unc) / 2 \
-                    + (task_preds - task_targets) ** 2 / (2 * task_unc)
+                        + (task_preds - task_targets) ** 2 / (2 * task_unc)
                 nll.append(task_nll.mean())
-            return nll
         else:
             nll = self.calibrator.nll(
                 preds=preds, unc=uncertainties, targets=targets, mask=mask
             )  # shape(data, task)
-            return nll
+
+        return nll
 
 
 class NLLClassEvaluator(UncertaintyEvaluator):
@@ -263,12 +263,12 @@ class CalibrationAreaEvaluator(UncertaintyEvaluator):
         fractions = np.zeros([num_tasks, 101])  # shape(tasks, 101)
         fractions[:, 100] = 1
 
+        bin_scaling = [0]
+
         if self.calibrator is not None:
             original_metric = self.calibrator.regression_calibrator_metric
             original_scaling = self.calibrator.scaling
             original_interval = self.calibrator.interval_percentile
-
-            bin_scaling = [0]
 
             for i in range(1, 100):
                 self.calibrator.regression_calibrator_metric = "interval"
@@ -294,9 +294,7 @@ class CalibrationAreaEvaluator(UncertaintyEvaluator):
             self.calibrator.interval_percentile = original_interval
 
         else:  # uncertainties are uncalibrated variances
-            bin_scaling = [0]
-            for i in range(1, 100):
-                bin_scaling.append(erfinv(i / 100) * np.sqrt(2))
+            bin_scaling.extend(erfinv(i / 100) * np.sqrt(2) for i in range(1, 100))
             for j in range(num_tasks):
                 task_mask = mask[j]
                 task_targets = targets[j][task_mask]
@@ -386,19 +384,16 @@ class ExpectedNormalizedErrorEvaluator(UncertaintyEvaluator):
             for j in range(100):
                 if self.calibrator is None:  # starts as a variance
                     root_mean_vars[i, j] = np.sqrt(np.mean(split_unc[j]))
-                    rmses[i, j] = np.sqrt(np.mean(np.square(split_error[j])))
                 elif self.calibration_method == "tscaling":  # convert back to sample stdev
                     bin_unc = split_unc[j] / original_scaling[i]
                     bin_var = t.var(df=self.calibrator.num_models - 1, scale=bin_unc)
                     root_mean_vars[i, j] = np.sqrt(np.mean(bin_var))
-                    rmses[i, j] = np.sqrt(np.mean(np.square(split_error[j])))
                 else:
                     bin_unc = split_unc[j]
                     if self.calibrator.regression_calibrator_metric == "interval":
                         bin_unc = bin_unc / original_scaling[i] * stdev_scaling[i]  # convert from interval to stdev as needed
                     root_mean_vars[i, j] = np.sqrt(np.mean(np.square(bin_unc)))
-                    rmses[i, j] = np.sqrt(np.mean(np.square(split_error[j])))
-
+                rmses[i, j] = np.sqrt(np.mean(np.square(split_error[j])))
         ence = np.mean(np.abs(root_mean_vars - rmses) / root_mean_vars, axis=1)
         return ence.tolist()
 
@@ -484,9 +479,12 @@ def build_uncertainty_evaluator(
         "mcc",
     ]
     multiclass_metrics = ["cross_entropy", "accuracy", "f1", "mcc"]
-    if dataset_type == "classification" and evaluation_method in classification_metrics:
-        evaluator_class = MetricEvaluator
-    elif dataset_type == "multiclass" and evaluation_method in multiclass_metrics:
+    if (
+        dataset_type == "classification"
+        and evaluation_method in classification_metrics
+        or dataset_type == "multiclass"
+        and evaluation_method in multiclass_metrics
+    ):
         evaluator_class = MetricEvaluator
     else:
         evaluator_class = supported_evaluators.get(evaluation_method, None)
@@ -496,7 +494,7 @@ def build_uncertainty_evaluator(
             f"Evaluator type {evaluation_method} is not supported. Avalable options are all calibration/multiclass metrics and {list(supported_evaluators.keys())}"
         )
     else:
-        evaluator = evaluator_class(
+        return evaluator_class(
             evaluation_method=evaluation_method,
             calibration_method=calibration_method,
             uncertainty_method=uncertainty_method,
@@ -505,4 +503,3 @@ def build_uncertainty_evaluator(
             calibrator=calibrator,
             is_atom_bond_targets=is_atom_bond_targets,
         )
-        return evaluator

@@ -102,9 +102,7 @@ try:
         """
         smiles = Chem.MolToSmiles(mol, isomericSmiles=True) if type(mol) != str else mol
         generator = rdDescriptors.RDKit2D()
-        features = generator.process(smiles)[1:]
-
-        return features
+        return generator.process(smiles)[1:]
 
     @register_features_generator('rdkit_2d_normalized')
     def rdkit_2d_normalized_features_generator(mol: Molecule) -> np.ndarray:
@@ -116,9 +114,7 @@ try:
         """
         smiles = Chem.MolToSmiles(mol, isomericSmiles=True) if type(mol) != str else mol
         generator = rdNormalizedDescriptors.RDKit2DNormalized()
-        features = generator.process(smiles)[1:]
-
-        return features
+        return generator.process(smiles)[1:]
 except ImportError:
     @register_features_generator('rdkit_2d')
     def rdkit_2d_features_generator(mol: Molecule) -> np.ndarray:

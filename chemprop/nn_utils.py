@@ -15,7 +15,7 @@ def compute_pnorm(model: nn.Module) -> float:
     :param model: A PyTorch model.
     :return: The norm of the parameters of the model.
     """
-    return math.sqrt(sum([p.norm().item() ** 2 for p in model.parameters()]))
+    return math.sqrt(sum(p.norm().item() ** 2 for p in model.parameters()))
 
 
 def compute_gnorm(model: nn.Module) -> float:
@@ -25,7 +25,13 @@ def compute_gnorm(model: nn.Module) -> float:
     :param model: A PyTorch model.
     :return: The norm of the gradients of the model.
     """
-    return math.sqrt(sum([p.grad.norm().item() ** 2 for p in model.parameters() if p.grad is not None]))
+    return math.sqrt(
+        sum(
+            p.grad.norm().item() ** 2
+            for p in model.parameters()
+            if p.grad is not None
+        )
+    )
 
 
 def param_count(model: nn.Module) -> int:

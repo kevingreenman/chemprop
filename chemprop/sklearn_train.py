@@ -30,12 +30,7 @@ def predict(model: Union[RandomForestRegressor, RandomForestClassifier, SVR, SVC
     :param features: The data features used as input for the model.
     :return: A list of lists of floats containing the predicted values.
     """
-    if dataset_type == 'regression':
-        preds = model.predict(features)
-
-        if len(preds.shape) == 1:
-            preds = [[pred] for pred in preds]
-    elif dataset_type == 'classification':
+    if dataset_type == 'classification':
         if model_type == 'random_forest':
             preds = model.predict_proba(features)
 
@@ -51,6 +46,11 @@ def predict(model: Union[RandomForestRegressor, RandomForestClassifier, SVR, SVC
             preds = [[pred] for pred in preds]
         else:
             raise ValueError(f'Model type "{model_type}" not supported')
+    elif dataset_type == 'regression':
+        preds = model.predict(features)
+
+        if len(preds.shape) == 1:
+            preds = [[pred] for pred in preds]
     else:
         raise ValueError(f'Dataset type "{dataset_type}" not supported')
 
@@ -76,17 +76,18 @@ def impute_sklearn(model: Union[RandomForestRegressor, RandomForestClassifier, S
     """
     num_tasks = train_data.num_tasks()
     new_targets=deepcopy(train_data.targets())
-    
-    if logger is not None:
-        debug = logger.debug
-    else:
-        debug = print
-        
+
+    debug = logger.debug if logger is not None else print
     debug('Imputation')
-    
+
     for task_num in trange(num_tasks):
-        impute_train_features = [features for features, targets in zip(train_data.features(), train_data.targets()) if targets[task_num] is None]
-        if len(impute_train_features) > 0:
+        if impute_train_features := [
+            features
+            for features, targets in zip(
+                train_data.features(), train_data.targets()
+            )
+            if targets[task_num] is None
+        ]:
             train_features, train_targets = zip(*[(features, targets[task_num])
                                               for features, targets in zip(train_data.features(), train_data.targets())
                                               if targets[task_num] is not None])
@@ -123,7 +124,7 @@ def impute_sklearn(model: Union[RandomForestRegressor, RandomForestClassifier, S
                         value = int(value > threshold)
                     new_targets[i][task_num] = value
                     ctr += 1
-                    
+
     return new_targets
 
 
@@ -217,7 +218,7 @@ def multi_task_sklearn(model: Union[RandomForestRegressor, RandomForestClassifie
         raise ValueError("Missing target values not tolerated for multi-task sklearn models." 
                          "Use either --single_task to train multiple single-task models or impute"
                          " targets via --impute_mode  <model/linear/median/mean/frequent>.")
-        
+
     if train_data.num_tasks() == 1:
         train_targets = [targets[0] for targets in train_targets]
 
@@ -235,16 +236,14 @@ def multi_task_sklearn(model: Union[RandomForestRegressor, RandomForestClassifie
         features=test_data.features()
     )
 
-    scores = evaluate_predictions(
+    return evaluate_predictions(
         preds=test_preds,
         targets=test_data.targets(),
         num_tasks=num_tasks,
         metrics=metrics,
         dataset_type=args.dataset_type,
-        logger=logger
+        logger=logger,
     )
-
-    return scores
 
 
 def run_sklearn(args: SklearnTrainArgs,

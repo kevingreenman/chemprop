@@ -56,10 +56,7 @@ def reset_featurization_parameters(logger: logging.Logger = None) -> None:
     """
     Function resets feature parameter values to defaults by replacing the parameters instance.
     """
-    if logger is not None:
-        debug = logger.debug
-    else:
-        debug = print
+    debug = logger.debug if logger is not None else print
     debug('Setting molecule featurization parameters to default.')
     global PARAMS
     PARAMS = Featurization_parameters()
@@ -119,32 +116,22 @@ def set_reaction(reaction: bool, mode: str) -> None:
         
 def is_explicit_h(is_mol: bool = True) -> bool:
     r"""Returns whether to retain explicit Hs (for reactions only)"""
-    if not is_mol:
-        return PARAMS.EXPLICIT_H
-    return False
+    return PARAMS.EXPLICIT_H if not is_mol else False
 
 
 def is_adding_hs(is_mol: bool = True) -> bool:
     r"""Returns whether to add explicit Hs to the mol (not for reactions)"""
-    if is_mol:
-        return PARAMS.ADDING_H
-    return False
+    return PARAMS.ADDING_H if is_mol else False
 
 
 def is_keeping_atom_map(is_mol: bool = True) -> bool:
     r"""Returns whether to keep the original atom mapping (not for reactions)"""
-    if is_mol:
-        return PARAMS.KEEP_ATOM_MAP
-    return False
+    return PARAMS.KEEP_ATOM_MAP if is_mol else False
 
 
 def is_reaction(is_mol: bool = True) -> bool:
     r"""Returns whether to use reactions as input"""
-    if is_mol:
-        return False
-    if PARAMS.REACTION: #(and not is_mol, checked above)
-        return True
-    return False
+    return False if is_mol else bool(PARAMS.REACTION)
 
 
 def reaction_mode() -> str:
@@ -233,12 +220,14 @@ def atom_features_zeros(atom: Chem.rdchem.Atom) -> List[Union[bool, int, float]]
     :param atom: An RDKit atom.
     :return: A list containing the atom features.
     """
-    if atom is None:
-        features = [0] * PARAMS.ATOM_FDIM
-    else:
-        features = onek_encoding_unk(atom.GetAtomicNum() - 1, PARAMS.ATOM_FEATURES['atomic_num']) + \
-            [0] * (PARAMS.ATOM_FDIM - PARAMS.MAX_ATOMIC_NUM - 1) #set other features to zero
-    return features
+    return (
+        [0] * PARAMS.ATOM_FDIM
+        if atom is None
+        else onek_encoding_unk(
+            atom.GetAtomicNum() - 1, PARAMS.ATOM_FEATURES['atomic_num']
+        )
+        + [0] * (PARAMS.ATOM_FDIM - PARAMS.MAX_ATOMIC_NUM - 1)
+    )
 
 
 def bond_features(bond: Chem.rdchem.Bond) -> List[Union[bool, int, float]]:
@@ -275,7 +264,7 @@ def map_reac_to_prod(mol_reac: Chem.Mol, mol_prod: Chem.Mol):
     """
     only_prod_ids = []
     prod_map_to_id = {}
-    mapnos_reac = set([atom.GetAtomMapNum() for atom in mol_reac.GetAtoms()]) 
+    mapnos_reac = {atom.GetAtomMapNum() for atom in mol_reac.GetAtoms()}
     for atom in mol_prod.GetAtoms():
         mapno = atom.GetAtomMapNum()
         if mapno > 0:

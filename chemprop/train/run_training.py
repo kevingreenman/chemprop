@@ -384,7 +384,8 @@ def run_training(args: TrainArgs,
     # Evaluate ensemble on test set
     if empty_test_set:
         ensemble_scores = {
-            metric: [np.nan for task in args.task_names] for metric in args.metrics
+            metric: [np.nan for _ in args.task_names]
+            for metric in args.metrics
         }
     else:
         avg_test_preds = (sum_test_preds / args.ensemble_size).tolist()

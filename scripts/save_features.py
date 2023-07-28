@@ -63,7 +63,7 @@ def generate_and_save_features(args: Args):
     # Get data and features function
     smiles = get_smiles(path=args.data_path, smiles_columns=args.smiles_column, flatten=True)
     features_generator = get_features_generator(args.features_generator)
-    temp_save_dir = args.save_path + '_temp'
+    temp_save_dir = f'{args.save_path}_temp'
 
     # Load partially complete data
     if args.restart:

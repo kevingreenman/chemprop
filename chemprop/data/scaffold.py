@@ -24,9 +24,9 @@ def generate_scaffold(mol: Union[str, Chem.Mol, Tuple[Chem.Mol, Chem.Mol]], incl
         mol = make_mol(mol, keep_h = False, add_h = False, keep_atom_map = False)
     if isinstance(mol, tuple):
         mol = mol[0]
-    scaffold = MurckoScaffold.MurckoScaffoldSmiles(mol = mol, includeChirality = include_chirality)
-
-    return scaffold
+    return MurckoScaffold.MurckoScaffoldSmiles(
+        mol=mol, includeChirality=include_chirality
+    )
 
 
 def scaffold_to_smiles(mols: Union[List[str], List[Chem.Mol], List[Tuple[Chem.Mol, Chem.Mol]]],

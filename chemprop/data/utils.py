@@ -62,7 +62,7 @@ def preprocess_smiles_columns(path: str,
             columns = get_header(path)
             if len(smiles_columns) != number_of_molecules:
                 raise ValueError('Length of smiles_columns must match number_of_molecules.')
-            if any([smiles not in columns for smiles in smiles_columns]):
+            if any(smiles not in columns for smiles in smiles_columns):
                 raise ValueError('Provided smiles_columns do not match the header of data file.')
 
     return smiles_columns
@@ -96,9 +96,7 @@ def get_task_names(path: str,
 
     ignore_columns = set(smiles_columns + ([] if ignore_columns is None else ignore_columns))
 
-    target_names = [column for column in columns if column not in ignore_columns]
-
-    return target_names
+    return [column for column in columns if column not in ignore_columns]
 
 
 def get_mixed_task_names(path: str,
@@ -188,8 +186,7 @@ def get_data_weights(path: str) -> List[float]:
     with open(path) as f:
         reader = csv.reader(f)
         next(reader)  # skip header row
-        for line in reader:
-            weights.append(float(line[0]))
+        weights.extend(float(line[0]) for line in reader)
     # normalize the data weights
     avg_weight = sum(weights) / len(weights)
     weights = [w / avg_weight for w in weights]
@@ -224,13 +221,11 @@ def get_constraints(path: str,
     constraints_data = np.transpose(constraints_data)  # each is num_data x num_targets
 
     if save_raw_data:
-        raw_constraints_data = []
-        for target in reader_columns:
-            raw_constraints_data.append(reader[target].values)
+        raw_constraints_data = [reader[target].values for target in reader_columns]
         raw_constraints_data = np.transpose(raw_constraints_data)  # each is num_data x num_columns
     else:
         raw_constraints_data = None
-    
+
     return constraints_data, raw_constraints_data
 
 
@@ -303,9 +298,7 @@ def get_invalid_smiles_from_file(path: str = None,
     """
     smiles = get_smiles(path=path, smiles_columns=smiles_columns, header=header)
 
-    invalid_smiles = get_invalid_smiles_from_list(smiles=smiles, reaction=reaction)
-
-    return invalid_smiles
+    return get_invalid_smiles_from_list(smiles=smiles, reaction=reaction)
 
 
 def get_invalid_smiles_from_list(smiles: List[List[str]], reaction: bool = False) -> List[List[str]]:
@@ -322,10 +315,10 @@ def get_invalid_smiles_from_list(smiles: List[List[str]], reaction: bool = False
     # Similarly, if the first SMILES in the column is a reaction, the remaining SMILES in the same column should all
     # correspond to reaction. Therefore, get `is_mol_list` only using the first element in smiles.
     is_mol_list = [is_mol(s) for s in smiles[0]]
-    is_reaction_list = [True if not x and reaction else False for x in is_mol_list]
-    is_explicit_h_list = [False for x in is_mol_list]  # set this to False as it is not needed for invalid SMILES check
-    is_adding_hs_list = [False for x in is_mol_list]  # set this to False as it is not needed for invalid SMILES check
-    keep_atom_map_list = [False for x in is_mol_list]  # set this to False as it is not needed for invalid SMILES check
+    is_reaction_list = [not x and reaction for x in is_mol_list]
+    is_explicit_h_list = [False for _ in is_mol_list]
+    is_adding_hs_list = [False for _ in is_mol_list]
+    keep_atom_map_list = [False for _ in is_mol_list]
 
     for mol_smiles in smiles:
         mols = make_mols(smiles=mol_smiles, reaction_list=is_reaction_list, keep_h_list=is_explicit_h_list,

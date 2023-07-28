@@ -350,7 +350,9 @@ def load_frzn_model(
                 "must be equal to 1 for freeze_first_only to be used!"
             )
 
-        if (current_args.checkpoint_frzn is not None) & (not (current_args.frzn_ffn_layers > 0)):
+        if (current_args.checkpoint_frzn is not None) & (
+            current_args.frzn_ffn_layers <= 0
+        ):
             encoder_param_names = [
                 [
                     (
@@ -643,7 +645,7 @@ def save_smiles_splits(
 
         indices_by_smiles = {}
         for i, row in enumerate(tqdm(reader)):
-            smiles = tuple([row[column] for column in smiles_columns])
+            smiles = tuple(row[column] for column in smiles_columns)
             if smiles in indices_by_smiles:
                 save_split_indices = False
                 info(
@@ -657,7 +659,9 @@ def save_smiles_splits(
 
     features_header = []
     if features_path is not None:
-        extension_sets = set([os.path.splitext(feat_path)[1] for feat_path in features_path])
+        extension_sets = {
+            os.path.splitext(feat_path)[1] for feat_path in features_path
+        }
         if extension_sets == {'.csv'}:
             for feat_path in features_path:
                 with open(feat_path, "r") as f:
@@ -728,7 +732,7 @@ def save_smiles_splits(
 
         if name == "train":
             data_weights = dataset.data_weights()
-            if any([w != 1 for w in data_weights]):
+            if any(w != 1 for w in data_weights):
                 with open(os.path.join(save_dir, f"{name}_weights.csv"), "w", newline="") as f:
                     writer = csv.writer(f)
                     writer.writerow(["data weights"])
@@ -825,11 +829,10 @@ def update_prediction_args(
             "for training, please specify a path to new constraints for prediction."
         )
 
-    # If features were used during training, they must be used when predicting
-    if validate_feature_sources:
-        if ((train_args.features_path is None) != (predict_args.features_path is None)) or (
+    if ((train_args.features_path is None) != (predict_args.features_path is None)) or (
             (train_args.features_generator is None) != (predict_args.features_generator is None)
         ):
+        if validate_feature_sources:
             raise ValueError(
                 "Features were used during training so they must be specified again during "
                 "prediction using the same type of features as before "

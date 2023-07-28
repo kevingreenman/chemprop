@@ -50,11 +50,12 @@ def get_checkpoint_paths(checkpoint_path: Optional[str] = None,
         checkpoint_paths = []
 
         for root, _, files in os.walk(checkpoint_dir):
-            for fname in files:
-                if fname.endswith(ext):
-                    checkpoint_paths.append(os.path.join(root, fname))
-
-        if len(checkpoint_paths) == 0:
+            checkpoint_paths.extend(
+                os.path.join(root, fname)
+                for fname in files
+                if fname.endswith(ext)
+            )
+        if not checkpoint_paths:
             raise ValueError(f'Failed to find any checkpoints with extension "{ext}" in directory "{checkpoint_dir}"')
 
         return checkpoint_paths
@@ -136,10 +137,7 @@ class CommonArgs(Tap):
     @property
     def device(self) -> torch.device:
         """The :code:`torch.device` on which to load and process data and models."""
-        if not self.cuda:
-            return torch.device('cpu')
-
-        return torch.device('cuda', self.gpu)
+        return torch.device('cpu') if not self.cuda else torch.device('cuda', self.gpu)
 
     @device.setter
     def device(self, device: torch.device) -> None:

@@ -168,21 +168,20 @@ class FFN(nn.Module):
 
         if ffn_base:
             self.ffn = ffn_base
+        elif num_layers > 1:
+            self.ffn = nn.Sequential(
+                build_ffn(
+                    first_linear_dim=features_size,
+                    hidden_size=hidden_size,
+                    num_layers=num_layers - 1,
+                    output_size=hidden_size,
+                    dropout=dropout,
+                    activation=activation,
+                ),
+                get_activation_function(activation),
+            )
         else:
-            if num_layers > 1:
-                self.ffn = nn.Sequential(
-                    build_ffn(
-                        first_linear_dim=features_size,
-                        hidden_size=hidden_size,
-                        num_layers=num_layers - 1,
-                        output_size=hidden_size,
-                        dropout=dropout,
-                        activation=activation,
-                    ),
-                    get_activation_function(activation),
-                )
-            else:
-                self.ffn = nn.Identity()
+            self.ffn = nn.Identity()
         self.ffn_readout = nn.Sequential(
             nn.Dropout(dropout),
             nn.Linear(base_output_size, output_size),
@@ -251,9 +250,7 @@ class FFN(nn.Module):
         :return: The output of the :class:`FFN`, a PyTorch tensor containing a list of property predictions.
         """
         output_hidden = self.calc_hidden(input)
-        output = self.readout(output_hidden, bond_types)
-
-        return output
+        return self.readout(output_hidden, bond_types)
 
 class FFNAtten(FFN):
     """
@@ -333,12 +330,11 @@ class FFNAtten(FFN):
         for i, (start, size) in enumerate(scope):
             if size == 0:
                 continue
-            else:
-                q_i = output[start:start+size]
-                w_i = W_a[start:start+size].softmax(0)
-                Q = constraints[i]
-                q_f = q_i + w_i * (Q - q_i.sum())
-                constrained_output.append(q_f)
+            q_i = output[start:start+size]
+            w_i = W_a[start:start+size].softmax(0)
+            Q = constraints[i]
+            q_f = q_i + w_i * (Q - q_i.sum())
+            constrained_output.append(q_f)
 
         output = torch.cat(constrained_output, dim=0)
 
@@ -363,9 +359,7 @@ class FFNAtten(FFN):
             scope = a_scope
         elif self.ffn_type == "bond":
             scope = [((start - 1) // 2, size // 2) for start, size in b_scope]
-        output = self.readout(output_hidden, scope, constraints, bond_types)
-
-        return output
+        return self.readout(output_hidden, scope, constraints, bond_types)
 
 
 class Exp(nn.Module):

@@ -63,7 +63,14 @@ def average_duplicates(args: Args):
         f.write(','.join(header) + '\n')
 
         for smiles, avg_targets in new_data:
-            f.write(smiles + ',' + ','.join(str(value) if value is not None else '' for value in avg_targets) + '\n')
+            f.write(
+                f'{smiles},'
+                + ','.join(
+                    str(value) if value is not None else ''
+                    for value in avg_targets
+                )
+                + '\n'
+            )
 
 
 if __name__ == '__main__':

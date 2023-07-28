@@ -372,10 +372,10 @@ class MoleculeDataset(Dataset):
 
         :return: A Boolean value.
         """
-        if self._data[0].atom_targets is None and self._data[0].bond_targets is None:
-            return False
-        else:
-            return True
+        return (
+            self._data[0].atom_targets is not None
+            or self._data[0].bond_targets is not None
+        )
 
     def batch_graph(self) -> List[BatchMolGraph]:
         r"""
@@ -506,7 +506,7 @@ class MoleculeDataset(Dataset):
         Returns the loss weighting associated with each datapoint.
         """
         if not hasattr(self._data[0], 'data_weight'):
-            return [1. for d in self._data]
+            return [1. for _ in self._data]
 
         return [d.data_weight for d in self._data]
 
@@ -646,33 +646,39 @@ class MoleculeDataset(Dataset):
                  this is a new :class:`~chemprop.data.StandardScaler` that has been fit on this dataset.
         """
         if len(self._data) == 0 or \
-                (self._data[0].features is None and not scale_bond_descriptors and not scale_atom_descriptors):
+                    (self._data[0].features is None and not scale_bond_descriptors and not scale_atom_descriptors):
             return None
 
         if scaler is None:
-            if scale_atom_descriptors and not self._data[0].atom_descriptors is None:
+            if (
+                scale_atom_descriptors
+                and self._data[0].atom_descriptors is not None
+            ):
                 features = np.vstack([d.raw_atom_descriptors for d in self._data])
-            elif scale_atom_descriptors and not self._data[0].atom_features is None:
+            elif scale_atom_descriptors and self._data[0].atom_features is not None:
                 features = np.vstack([d.raw_atom_features for d in self._data])
-            elif scale_bond_descriptors and not self._data[0].bond_descriptors is None:
+            elif (
+                scale_bond_descriptors
+                and self._data[0].bond_descriptors is not None
+            ):
                 features = np.vstack([d.raw_bond_descriptors for d in self._data])
-            elif scale_bond_descriptors and not self._data[0].bond_features is None:
+            elif scale_bond_descriptors and self._data[0].bond_features is not None:
                 features = np.vstack([d.raw_bond_features for d in self._data])
             else:
                 features = np.vstack([d.raw_features for d in self._data])
             scaler = StandardScaler(replace_nan_token=replace_nan_token)
             scaler.fit(features)
 
-        if scale_atom_descriptors and not self._data[0].atom_descriptors is None:
+        if scale_atom_descriptors and self._data[0].atom_descriptors is not None:
             for d in self._data:
                 d.set_atom_descriptors(scaler.transform(d.raw_atom_descriptors))
-        elif scale_atom_descriptors and not self._data[0].atom_features is None:
+        elif scale_atom_descriptors and self._data[0].atom_features is not None:
             for d in self._data:
                 d.set_atom_features(scaler.transform(d.raw_atom_features))
-        elif scale_bond_descriptors and not self._data[0].bond_descriptors is None:
+        elif scale_bond_descriptors and self._data[0].bond_descriptors is not None:
             for d in self._data:
                 d.set_bond_descriptors(scaler.transform(d.raw_bond_descriptors))
-        elif scale_bond_descriptors and not self._data[0].bond_features is None:
+        elif scale_bond_descriptors and self._data[0].bond_features is not None:
             for d in self._data:
                 d.set_bond_features(scaler.transform(d.raw_bond_features))
         else:
@@ -736,7 +742,7 @@ class MoleculeDataset(Dataset):
         :param targets: A list of lists of floats (or None) containing targets for each molecule. This must be the
                         same length as the underlying dataset.
         """
-        if not len(self._data) == len(targets):
+        if len(self._data) != len(targets):
             raise ValueError(
                 "number of molecules and targets must be of same length! "
                 f"num molecules: {len(self._data)}, num targets: {len(targets)}"

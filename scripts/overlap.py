@@ -25,7 +25,9 @@ def overlap(args: Args):
     smiles_1 = get_smiles(path=args.data_path_1, smiles_columns=args.smiles_columns_1)
     smiles_2 = get_smiles(path=args.data_path_2, smiles_columns=args.smiles_columns_2)
 
-    smiles_1, smiles_2 = set([tuple(smiles) for smiles in smiles_1]), set([tuple(smiles) for smiles in smiles_2])
+    smiles_1, smiles_2 = {tuple(smiles) for smiles in smiles_1}, {
+        tuple(smiles) for smiles in smiles_2
+    }
     size_1, size_2 = len(smiles_1), len(smiles_2)
     intersection = smiles_1.intersection(smiles_2)
     size_intersect = len(intersection)

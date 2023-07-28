@@ -37,9 +37,9 @@ def evaluate_predictions(preds: List[List[float]],
 
     metric_to_func = {metric: get_metric_func(metric) for metric in metrics}
 
-    if len(preds) == 0:
+    if not preds:
         return {metric: [float('nan')] * num_tasks for metric in metrics}
-    
+
     if is_atom_bond_targets:
         targets = [np.concatenate(x).reshape([-1, 1]) for x in zip(*targets)]
 
@@ -140,7 +140,7 @@ def evaluate(model: MoleculeModel,
         atom_bond_scaler=atom_bond_scaler,
     )
 
-    results = evaluate_predictions(
+    return evaluate_predictions(
         preds=preds,
         targets=data_loader.targets,
         num_tasks=num_tasks,
@@ -151,5 +151,3 @@ def evaluate(model: MoleculeModel,
         gt_targets=gt_targets,
         lt_targets=lt_targets,
     )
-
-    return results

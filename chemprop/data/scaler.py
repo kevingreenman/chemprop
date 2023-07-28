@@ -45,9 +45,11 @@ class StandardScaler:
         """
         X = np.array(X).astype(float)
         transformed_with_nan = (X - self.means) / self.stds
-        transformed_with_none = np.where(np.isnan(transformed_with_nan), self.replace_nan_token, transformed_with_nan)
-
-        return transformed_with_none
+        return np.where(
+            np.isnan(transformed_with_nan),
+            self.replace_nan_token,
+            transformed_with_nan,
+        )
 
     def inverse_transform(self, X: List[List[Optional[float]]]) -> np.ndarray:
         """
@@ -58,9 +60,11 @@ class StandardScaler:
         """
         X = np.array(X).astype(float)
         transformed_with_nan = X * self.stds + self.means
-        transformed_with_none = np.where(np.isnan(transformed_with_nan), self.replace_nan_token, transformed_with_nan)
-
-        return transformed_with_none
+        return np.where(
+            np.isnan(transformed_with_nan),
+            self.replace_nan_token,
+            transformed_with_nan,
+        )
 
 class AtomBondScaler(StandardScaler):
     """A :class:`AtomBondScaler` normalizes the features of a dataset.

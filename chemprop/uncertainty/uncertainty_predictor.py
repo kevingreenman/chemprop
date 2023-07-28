@@ -133,16 +133,16 @@ class NoUncertaintyPredictor(UncertaintyPredictor):
                 or bond_descriptor_scaler is not None
             ):
                 self.test_data.reset_features_and_targets()
-                if features_scaler is not None:
-                    self.test_data.normalize_features(features_scaler)
-                if atom_descriptor_scaler is not None:
-                    self.test_data.normalize_features(
-                        atom_descriptor_scaler, scale_atom_descriptors=True
-                    )
-                if bond_descriptor_scaler is not None:
-                    self.test_data.normalize_features(
-                        bond_descriptor_scaler, scale_bond_descriptors=True
-                    )
+            if features_scaler is not None:
+                self.test_data.normalize_features(features_scaler)
+            if atom_descriptor_scaler is not None:
+                self.test_data.normalize_features(
+                    atom_descriptor_scaler, scale_atom_descriptors=True
+                )
+            if bond_descriptor_scaler is not None:
+                self.test_data.normalize_features(
+                    bond_descriptor_scaler, scale_bond_descriptors=True
+                )
 
             preds = predict(
                 model=model,
@@ -166,15 +166,14 @@ class NoUncertaintyPredictor(UncertaintyPredictor):
                             self.test_data.number_of_atoms,
                             self.test_data.number_of_bonds,
                         )
-                        individual_preds = []
-                        for _ in model.atom_targets:
-                            individual_preds.append(
-                                np.zeros((np.array(n_atoms).sum(), 1, self.num_models))
-                            )
-                        for _ in model.bond_targets:
-                            individual_preds.append(
-                                np.zeros((np.array(n_bonds).sum(), 1, self.num_models))
-                            )
+                        individual_preds = [
+                            np.zeros((np.array(n_atoms).sum(), 1, self.num_models))
+                            for _ in model.atom_targets
+                        ]
+                        individual_preds.extend(
+                            np.zeros((np.array(n_bonds).sum(), 1, self.num_models))
+                            for _ in model.bond_targets
+                        )
                         for j, pred in enumerate(preds):
                             individual_preds[j][:, :, i] = pred
                     else:
@@ -264,16 +263,16 @@ class RoundRobinSpectraPredictor(UncertaintyPredictor):
                 or bond_descriptor_scaler is not None
             ):
                 self.test_data.reset_features_and_targets()
-                if features_scaler is not None:
-                    self.test_data.normalize_features(features_scaler)
-                if atom_descriptor_scaler is not None:
-                    self.test_data.normalize_features(
-                        atom_descriptor_scaler, scale_atom_descriptors=True
-                    )
-                if bond_descriptor_scaler is not None:
-                    self.test_data.normalize_features(
-                        bond_descriptor_scaler, scale_bond_descriptors=True
-                    )
+            if features_scaler is not None:
+                self.test_data.normalize_features(features_scaler)
+            if atom_descriptor_scaler is not None:
+                self.test_data.normalize_features(
+                    atom_descriptor_scaler, scale_atom_descriptors=True
+                )
+            if bond_descriptor_scaler is not None:
+                self.test_data.normalize_features(
+                    bond_descriptor_scaler, scale_bond_descriptors=True
+                )
 
             preds = predict(
                 model=model,
@@ -341,16 +340,16 @@ class MVEPredictor(UncertaintyPredictor):
                 or bond_descriptor_scaler is not None
             ):
                 self.test_data.reset_features_and_targets()
-                if features_scaler is not None:
-                    self.test_data.normalize_features(features_scaler)
-                if atom_descriptor_scaler is not None:
-                    self.test_data.normalize_features(
-                        atom_descriptor_scaler, scale_atom_descriptors=True
-                    )
-                if bond_descriptor_scaler is not None:
-                    self.test_data.normalize_features(
-                        bond_descriptor_scaler, scale_bond_descriptors=True
-                    )
+            if features_scaler is not None:
+                self.test_data.normalize_features(features_scaler)
+            if atom_descriptor_scaler is not None:
+                self.test_data.normalize_features(
+                    atom_descriptor_scaler, scale_atom_descriptors=True
+                )
+            if bond_descriptor_scaler is not None:
+                self.test_data.normalize_features(
+                    bond_descriptor_scaler, scale_bond_descriptors=True
+                )
 
             preds, var = predict(
                 model=model,
@@ -370,15 +369,14 @@ class MVEPredictor(UncertaintyPredictor):
                             self.test_data.number_of_atoms,
                             self.test_data.number_of_bonds,
                         )
-                        individual_preds = []
-                        for _ in model.atom_targets:
-                            individual_preds.append(
-                                np.zeros((np.array(n_atoms).sum(), 1, self.num_models))
-                            )
-                        for _ in model.bond_targets:
-                            individual_preds.append(
-                                np.zeros((np.array(n_bonds).sum(), 1, self.num_models))
-                            )
+                        individual_preds = [
+                            np.zeros((np.array(n_atoms).sum(), 1, self.num_models))
+                            for _ in model.atom_targets
+                        ]
+                        individual_preds.extend(
+                            np.zeros((np.array(n_bonds).sum(), 1, self.num_models))
+                            for _ in model.bond_targets
+                        )
                         for j, pred in enumerate(preds):
                             individual_preds[j][:, :, i] = pred
                     else:
@@ -486,16 +484,16 @@ class EvidentialTotalPredictor(UncertaintyPredictor):
                 or bond_descriptor_scaler is not None
             ):
                 self.test_data.reset_features_and_targets()
-                if features_scaler is not None:
-                    self.test_data.normalize_features(features_scaler)
-                if atom_descriptor_scaler is not None:
-                    self.test_data.normalize_features(
-                        atom_descriptor_scaler, scale_atom_descriptors=True
-                    )
-                if bond_descriptor_scaler is not None:
-                    self.test_data.normalize_features(
-                        bond_descriptor_scaler, scale_bond_descriptors=True
-                    )
+            if features_scaler is not None:
+                self.test_data.normalize_features(features_scaler)
+            if atom_descriptor_scaler is not None:
+                self.test_data.normalize_features(
+                    atom_descriptor_scaler, scale_atom_descriptors=True
+                )
+            if bond_descriptor_scaler is not None:
+                self.test_data.normalize_features(
+                    bond_descriptor_scaler, scale_bond_descriptors=True
+                )
 
             preds, lambdas, alphas, betas = predict(
                 model=model,
@@ -516,15 +514,14 @@ class EvidentialTotalPredictor(UncertaintyPredictor):
                             self.test_data.number_of_atoms,
                             self.test_data.number_of_bonds,
                         )
-                        individual_preds = []
-                        for _ in model.atom_targets:
-                            individual_preds.append(
-                                np.zeros((np.array(n_atoms).sum(), 1, self.num_models))
-                            )
-                        for _ in model.bond_targets:
-                            individual_preds.append(
-                                np.zeros((np.array(n_bonds).sum(), 1, self.num_models))
-                            )
+                        individual_preds = [
+                            np.zeros((np.array(n_atoms).sum(), 1, self.num_models))
+                            for _ in model.atom_targets
+                        ]
+                        individual_preds.extend(
+                            np.zeros((np.array(n_bonds).sum(), 1, self.num_models))
+                            for _ in model.bond_targets
+                        )
                         for j, pred in enumerate(preds):
                             individual_preds[j][:, :, i] = pred
                     else:
@@ -632,16 +629,16 @@ class EvidentialAleatoricPredictor(UncertaintyPredictor):
                 or bond_descriptor_scaler is not None
             ):
                 self.test_data.reset_features_and_targets()
-                if features_scaler is not None:
-                    self.test_data.normalize_features(features_scaler)
-                if atom_descriptor_scaler is not None:
-                    self.test_data.normalize_features(
-                        atom_descriptor_scaler, scale_atom_descriptors=True
-                    )
-                if bond_descriptor_scaler is not None:
-                    self.test_data.normalize_features(
-                        bond_descriptor_scaler, scale_bond_descriptors=True
-                    )
+            if features_scaler is not None:
+                self.test_data.normalize_features(features_scaler)
+            if atom_descriptor_scaler is not None:
+                self.test_data.normalize_features(
+                    atom_descriptor_scaler, scale_atom_descriptors=True
+                )
+            if bond_descriptor_scaler is not None:
+                self.test_data.normalize_features(
+                    bond_descriptor_scaler, scale_bond_descriptors=True
+                )
 
             preds, lambdas, alphas, betas = predict(
                 model=model,
@@ -662,15 +659,14 @@ class EvidentialAleatoricPredictor(UncertaintyPredictor):
                             self.test_data.number_of_atoms,
                             self.test_data.number_of_bonds,
                         )
-                        individual_preds = []
-                        for _ in model.atom_targets:
-                            individual_preds.append(
-                                np.zeros((np.array(n_atoms).sum(), 1, self.num_models))
-                            )
-                        for _ in model.bond_targets:
-                            individual_preds.append(
-                                np.zeros((np.array(n_bonds).sum(), 1, self.num_models))
-                            )
+                        individual_preds = [
+                            np.zeros((np.array(n_atoms).sum(), 1, self.num_models))
+                            for _ in model.atom_targets
+                        ]
+                        individual_preds.extend(
+                            np.zeros((np.array(n_bonds).sum(), 1, self.num_models))
+                            for _ in model.bond_targets
+                        )
                         for j, pred in enumerate(preds):
                             individual_preds[j][:, :, i] = pred
                     else:

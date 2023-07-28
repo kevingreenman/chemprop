@@ -22,10 +22,10 @@ def welchs(mean1: List[float],  # mean performance across folds for each dataset
            nobs2: List[int]):  # number of CV folds for each dataset (model 2)
     # Expand one number of observations to all
     if len(nobs1) == 1:
-        nobs1 = nobs1 * len(mean1)
+        nobs1 *= len(mean1)
 
     if len(nobs2) == 1:
-        nobs2 = nobs2 * len(mean2)
+        nobs2 *= len(mean2)
 
     assert len(mean1) == len(std1) == len(nobs1) == len(mean2) == len(std2) == len(nobs2)
 

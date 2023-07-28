@@ -97,7 +97,7 @@ def find_similar_mols(test_smiles: List[str],
     else:
         raise ValueError(f'Distance measure "{distance_measure}" not supported.')
 
-    if distance_measure in ('embedding', 'morgan'):
+    if distance_measure in {'embedding', 'morgan'}:
         print('Computing distances')
         distances = cdist(test_vecs, train_vecs, metric=metric)
 

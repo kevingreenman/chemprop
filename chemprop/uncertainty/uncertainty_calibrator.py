@@ -123,13 +123,11 @@ class ZScalingCalibrator(UncertaintyCalibrator):
 
     @property
     def label(self):
-        if self.regression_calibrator_metric == "stdev":
-            label = f"{self.uncertainty_method}_zscaling_stdev"
-        else:  # interval
-            label = (
-                f"{self.uncertainty_method}_zscaling_{self.interval_percentile}interval"
-            )
-        return label
+        return (
+            f"{self.uncertainty_method}_zscaling_stdev"
+            if self.regression_calibrator_metric == "stdev"
+            else f"{self.uncertainty_method}_zscaling_{self.interval_percentile}interval"
+        )
 
     def raise_argument_errors(self):
         super().raise_argument_errors()
@@ -242,13 +240,11 @@ class TScalingCalibrator(UncertaintyCalibrator):
 
     @property
     def label(self):
-        if self.regression_calibrator_metric == "stdev":
-            label = f"{self.uncertainty_method}_tscaling_stdev"
-        else:  # interval
-            label = (
-                f"{self.uncertainty_method}_tscaling_{self.interval_percentile}interval"
-            )
-        return label
+        return (
+            f"{self.uncertainty_method}_tscaling_stdev"
+            if self.regression_calibrator_metric == "stdev"
+            else f"{self.uncertainty_method}_tscaling_{self.interval_percentile}interval"
+        )
 
     def raise_argument_errors(self):
         super().raise_argument_errors()
@@ -375,11 +371,11 @@ class ZelikmanCalibrator(UncertaintyCalibrator):
 
     @property
     def label(self):
-        if self.regression_calibrator_metric == "stdev":
-            label = f"{self.uncertainty_method}_zelikman_stdev"
-        else:
-            label = f"{self.uncertainty_method}_zelikman_{self.interval_percentile}interval"
-        return label
+        return (
+            f"{self.uncertainty_method}_zelikman_stdev"
+            if self.regression_calibrator_metric == "stdev"
+            else f"{self.uncertainty_method}_zelikman_{self.interval_percentile}interval"
+        )
 
     def raise_argument_errors(self):
         super().raise_argument_errors()
@@ -488,11 +484,11 @@ class MVEWeightingCalibrator(UncertaintyCalibrator):
 
     @property
     def label(self):
-        if self.regression_calibrator_metric == "stdev":
-            label = f"{self.uncertainty_method}_mve_weighting_stdev"
-        else:  # interval
-            label = f"{self.uncertainty_method}_mve_weighting_{self.interval_percentile}interval"
-        return label
+        return (
+            f"{self.uncertainty_method}_mve_weighting_stdev"
+            if self.regression_calibrator_metric == "stdev"
+            else f"{self.uncertainty_method}_mve_weighting_{self.interval_percentile}interval"
+        )
 
     def raise_argument_errors(self):
         super().raise_argument_errors()
@@ -934,7 +930,7 @@ def build_uncertainty_calibrator(
                 calibration_method = "zscaling"
             else:
                 calibration_method = "zelikman_interval"
-        if dataset_type in ["classification", "multiclass"]:
+        if dataset_type in {"classification", "multiclass"}:
             calibration_method == "isotonic"
 
     supported_calibrators = {

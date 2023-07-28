@@ -39,11 +39,7 @@ def build_search_space(search_parameters: List[str], train_epochs: int = None) -
         "max_lr": hp.loguniform("max_lr", low=np.log(1e-6), high=np.log(1e-2)),
         "warmup_epochs": hp.quniform("warmup_epochs", low=1, high=train_epochs // 2, q=1)
     }
-    space = {}
-    for key in search_parameters:
-        space[key] = available_spaces[key]
-
-    return space
+    return {key: available_spaces[key] for key in search_parameters}
 
 
 def merge_trials(trials: Trials, new_trials_data: List[Dict]) -> Trials:
@@ -55,7 +51,7 @@ def merge_trials(trials: Trials, new_trials_data: List[Dict]) -> Trials:
     :return: A hyperopt trials object, merged from the two inputs.
     """
     if len(trials.trials) > 0:
-        max_tid = max([trial["tid"] for trial in trials.trials])
+        max_tid = max(trial["tid"] for trial in trials.trials)
         trial_keys = set(trials.vals.keys())
         for trial in trials.trials:
             new_trial_keys = set(trial["misc"]["vals"].keys())
@@ -135,11 +131,7 @@ def save_trials(
     :param hyperopt_seed: The initial seed used for choosing parameters in hyperopt trials.
     :param trials: A trials object containing information on a completed hyperopt iteration.
     """
-    if logger is None:
-        info = print
-    else:
-        info = logger.info
-
+    info = print if logger is None else logger.info
     new_fname = f"{hyperopt_seed}.pkl"
     existing_files = os.listdir(dir_path)
     if new_fname in existing_files:
@@ -277,20 +269,20 @@ def load_manual_trials(
         param_dict = {}
         vals_dict = {}
         for key in param_keys:
-            if key == "init_lr_ratio":
-                param_value = val_value = trial_args["init_lr"] / trial_args["max_lr"]
-            elif key == "final_lr_ratio":
-                param_value = val_value = trial_args["final_lr"] / trial_args["max_lr"]
-            elif key == "linked_hidden_size":
-                param_value = val_value = trial_args["hidden_size"]
-            elif key == "aggregation":
-                param_value = trial_args[key]
-                val_value = ["mean", "sum", "norm"].index(param_value)
-            elif key == "activation":
+            if key == "activation":
                 param_value = trial_args[key]
                 val_value = ["ReLU", "LeakyReLU", "PReLU", "tanh", "SELU", "ELU"].index(
                     param_value
                 )
+            elif key == "aggregation":
+                param_value = trial_args[key]
+                val_value = ["mean", "sum", "norm"].index(param_value)
+            elif key == "final_lr_ratio":
+                param_value = val_value = trial_args["final_lr"] / trial_args["max_lr"]
+            elif key == "init_lr_ratio":
+                param_value = val_value = trial_args["init_lr"] / trial_args["max_lr"]
+            elif key == "linked_hidden_size":
+                param_value = val_value = trial_args["hidden_size"]
             else:
                 param_value = val_value = trial_args[key]
             param_dict[key] = param_value
@@ -344,23 +336,21 @@ def save_config(config_path: str, hyperparams_dict: dict, max_lr: float) -> None
     save_dict = {}
 
     for key in hyperparams_dict:
-        if key == "linked_hidden_size":
+        if key == "final_lr_ratio":
+            save_dict["final_lr"] = (
+                hyperparams_dict[key] * max_lr
+                if "max_lr" not in hyperparams_dict
+                else (hyperparams_dict[key] * hyperparams_dict["max_lr"])
+            )
+        elif key == "init_lr_ratio":
+            save_dict["init_lr"] = (
+                hyperparams_dict[key] * max_lr
+                if "max_lr" not in hyperparams_dict
+                else (hyperparams_dict[key] * hyperparams_dict["max_lr"])
+            )
+        elif key == "linked_hidden_size":
             save_dict["hidden_size"] = hyperparams_dict["linked_hidden_size"]
             save_dict["ffn_hidden_size"] = hyperparams_dict["linked_hidden_size"]
-        elif key == "init_lr_ratio":
-            if "max_lr" not in hyperparams_dict:
-                save_dict["init_lr"] = hyperparams_dict[key] * max_lr
-            else:
-                save_dict["init_lr"] = (
-                    hyperparams_dict[key] * hyperparams_dict["max_lr"]
-                )
-        elif key == "final_lr_ratio":
-            if "max_lr" not in hyperparams_dict:
-                save_dict["final_lr"] = hyperparams_dict[key] * max_lr
-            else:
-                save_dict["final_lr"] = (
-                    hyperparams_dict[key] * hyperparams_dict["max_lr"]
-                )
         else:
             save_dict[key] = hyperparams_dict[key]
 

@@ -152,30 +152,20 @@ class MoleculeModel(nn.Module):
             if args.frzn_ffn_layers > 0:
                 if self.is_atom_bond_targets:
                     if args.shared_atom_bond_ffn:
-                        for param in list(self.readout.atom_ffn_base.parameters())[
-                            0 : 2 * args.frzn_ffn_layers
-                        ]:
+                        for param in list(self.readout.atom_ffn_base.parameters())[:2 * args.frzn_ffn_layers]:
                             param.requires_grad = False
-                        for param in list(self.readout.bond_ffn_base.parameters())[
-                            0 : 2 * args.frzn_ffn_layers
-                        ]:
+                        for param in list(self.readout.bond_ffn_base.parameters())[:2 * args.frzn_ffn_layers]:
                             param.requires_grad = False
                     else:
                         for ffn in self.readout.ffn_list:
                             if ffn.constraint:
-                                for param in list(ffn.ffn.parameters())[
-                                    0 : 2 * args.frzn_ffn_layers
-                                ]:
+                                for param in list(ffn.ffn.parameters())[:2 * args.frzn_ffn_layers]:
                                     param.requires_grad = False
                             else:
-                                for param in list(ffn.ffn_readout.parameters())[
-                                    0 : 2 * args.frzn_ffn_layers
-                                ]:
+                                for param in list(ffn.ffn_readout.parameters())[:2 * args.frzn_ffn_layers]:
                                     param.requires_grad = False
                 else:
-                    for param in list(self.readout.parameters())[
-                        0 : 2 * args.frzn_ffn_layers
-                    ]:  # Freeze weights and bias for given number of layers
+                    for param in list(self.readout.parameters())[:2 * args.frzn_ffn_layers]:  # Freeze weights and bias for given number of layers
                         param.requires_grad = False
 
     def fingerprint(
@@ -285,7 +275,6 @@ class MoleculeModel(nn.Module):
             )
             output = self.readout(encodings)
 
-        # Don't apply sigmoid during training when using BCEWithLogitsLoss
         if (
             self.classification
             and not (self.training and self.no_training_normalization)
@@ -307,7 +296,6 @@ class MoleculeModel(nn.Module):
                     output
                 )  # to get probabilities during evaluation, but not during training when using CrossEntropyLoss
 
-        # Modify multi-input loss functions
         if self.loss_function == "mve":
             if self.is_atom_bond_targets:
                 outputs = []
@@ -346,10 +334,7 @@ class MoleculeModel(nn.Module):
                 output = torch.cat([means, lambdas, alphas, betas], dim=1)
         if self.loss_function == "dirichlet":
             if self.is_atom_bond_targets:
-                outputs = []
-                for x in output:
-                    outputs.append(nn.functional.softplus(x) + 1)
-                return outputs
+                return [nn.functional.softplus(x) + 1 for x in output]
             else:
                 output = nn.functional.softplus(output) + 1
 

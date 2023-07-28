@@ -44,7 +44,7 @@ def get_loss_func(args: TrainArgs) -> Callable:
         raise ValueError(f'Dataset type "{args.dataset_type}" not supported.')
 
     # Return loss function if it is represented in the supported_loss_functions dictionary
-    loss_function_choices = supported_loss_functions.get(args.dataset_type, dict())
+    loss_function_choices = supported_loss_functions.get(args.dataset_type, {})
     loss_function = loss_function_choices.get(args.loss_function)
 
     if loss_function is not None:
@@ -104,8 +104,10 @@ def mcc_class_loss(
     FP = torch.sum((1 - targets) * predictions * data_weights * mask, axis=0)
     FN = torch.sum(targets * (1 - predictions) * data_weights * mask, axis=0)
     TN = torch.sum((1 - targets) * (1 - predictions) * data_weights * mask, axis=0)
-    loss = 1 - ((TP * TN - FP * FN) / torch.sqrt((TP + FP) * (TP + FN) * (TN + FP) * (TN + FN)))
-    return loss
+    return 1 - (
+        (TP * TN - FP * FN)
+        / torch.sqrt((TP + FP) * (TP + FN) * (TN + FP) * (TN + FN))
+    )
 
 
 def mcc_multiclass_loss(
@@ -146,12 +148,9 @@ def mcc_multiclass_loss(
     cov_ytyt = n_samples**2 - torch.dot(t_sum, t_sum)
 
     if cov_ypyp * cov_ytyt == 0:
-        loss = torch.tensor(1.0, device=torch_device)
-    else:
-        mcc = cov_ytyp / torch.sqrt(cov_ytyt * cov_ypyp)
-        loss = 1 - mcc
-
-    return loss
+        return torch.tensor(1.0, device=torch_device)
+    mcc = cov_ytyp / torch.sqrt(cov_ytyt * cov_ypyp)
+    return 1 - mcc
 
 
 def sid_loss(
@@ -185,11 +184,11 @@ def sid_loss(
     # Calculate loss value
     target_spectra = torch.where(mask, target_spectra, one_sub)
     model_spectra = torch.where(mask, model_spectra, one_sub)  # losses in excluded regions will be zero because log(1/1) = 0.
-    loss = torch.mul(torch.log(torch.div(model_spectra, target_spectra)), model_spectra) + torch.mul(
+    return torch.mul(
+        torch.log(torch.div(model_spectra, target_spectra)), model_spectra
+    ) + torch.mul(
         torch.log(torch.div(target_spectra, model_spectra)), target_spectra
     )
-
-    return loss
 
 
 def wasserstein_loss(
@@ -222,9 +221,7 @@ def wasserstein_loss(
     # Calculate loss value
     target_cum = torch.cumsum(target_spectra, axis=1)
     model_cum = torch.cumsum(model_spectra, axis=1)
-    loss = torch.abs(target_cum - model_cum)
-
-    return loss
+    return torch.abs(target_cum - model_cum)
 
 
 def normal_mve(pred_values, targets):
@@ -362,8 +359,4 @@ def evidential_loss(pred_values, targets, lam: float = 0, epsilon: float = 1e-8,
     reg = error * (2 * v + alpha)
     L_REG = reg  # torch.mean(reg, dim=-1)
 
-    # Loss = L_NLL + L_REG
-    # TODO If we want to optimize the dual- of the objective use the line below:
-    loss = L_NLL + lam * (L_REG - epsilon)
-
-    return loss
+    return L_NLL + lam * (L_REG - epsilon)

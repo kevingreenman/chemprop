@@ -83,11 +83,7 @@ def aggregate_results(ckpts_dirs: List[str], split_type: str):
                 except (IndexError, ValueError):
                     invalid = True
 
-        if invalid:
-            mean, std = 'N/A', 'N/A'
-        else:
-            mean, std = np.mean(results), np.std(results)
-
+        mean, std = ('N/A', 'N/A') if invalid else (np.mean(results), np.std(results))
         # Compute results
         print(f'{name}\t{mean}\t{std}\t{len(results)}')
 

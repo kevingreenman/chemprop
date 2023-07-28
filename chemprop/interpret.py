@@ -70,9 +70,7 @@ class ChempropModel:
 
         # Ensemble predictions
         sum_preds = sum(sum_preds)
-        avg_preds = sum_preds / len(self.checkpoints)
-
-        return avg_preds
+        return sum_preds / len(self.checkpoints)
 
 
 class MCTSNode:
@@ -143,8 +141,9 @@ def __extract_subgraph(mol: Chem.Mol, selected_atoms: Set[int]) -> Tuple[Chem.Mo
     roots = []
     for idx in selected_atoms:
         atom = mol.GetAtomWithIdx(idx)
-        bad_neis = [y for y in atom.GetNeighbors() if y.GetIdx() not in selected_atoms]
-        if len(bad_neis) > 0:
+        if bad_neis := [
+            y for y in atom.GetNeighbors() if y.GetIdx() not in selected_atoms
+        ]:
             roots.append(idx)
 
     new_mol = Chem.RWMol(mol)
@@ -155,7 +154,7 @@ def __extract_subgraph(mol: Chem.Mol, selected_atoms: Set[int]) -> Tuple[Chem.Mo
         aroma_bonds = [bond for bond in atom.GetBonds() if bond.GetBondType() == Chem.rdchem.BondType.AROMATIC]
         aroma_bonds = [bond for bond in aroma_bonds if
                        bond.GetBeginAtom().GetIdx() in selected_atoms and bond.GetEndAtom().GetIdx() in selected_atoms]
-        if len(aroma_bonds) == 0:
+        if not aroma_bonds:
             atom.SetIsAromatic(False)
 
     remove_atoms = [atom.GetIdx() for atom in new_mol.GetAtoms() if atom.GetIdx() not in selected_atoms]
@@ -225,7 +224,7 @@ def mcts_rollout(node: MCTSNode,
 
     # Expand if this node has never been visited
     if len(node.children) == 0:
-        cur_cls = set([i for i, x in enumerate(clusters) if x <= cur_atoms])
+        cur_cls = {i for i, x in enumerate(clusters) if x <= cur_atoms}
         for i in cur_cls:
             leaf_atoms = [a for a in clusters[i] if len(atom_cls[a] & cur_cls) == 1]
             if len(nei_cls[i] & cur_cls) == 1 or len(clusters[i]) == 2 and len(leaf_atoms) == 1:
@@ -289,9 +288,11 @@ def mcts(smiles: str,
     for _ in range(n_rollout):
         mcts_rollout(root, state_map, smiles, clusters, atom_cls, nei_cls, scoring_function)
 
-    rationales = [node for _, node in state_map.items() if len(node.atoms) <= max_atoms and node.P >= prop_delta]
-
-    return rationales
+    return [
+        node
+        for _, node in state_map.items()
+        if len(node.atoms) <= max_atoms and node.P >= prop_delta
+    ]
 
 @timeit()
 def interpret(args: InterpretArgs) -> None:

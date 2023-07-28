@@ -44,9 +44,15 @@ def scaffold_similarity(smiles_1: List[str], smiles_2: List[str]):
     scaffolds_1, smiles_sets_1 = zip(*scaffold_to_smiles_1.items())
     scaffolds_2, smiles_sets_2 = zip(*scaffold_to_smiles_2.items())
 
-    smiles_to_scaffold = {smiles: scaffold for scaffold, smiles_set in scaffold_to_smiles_1.items() for smiles in smiles_set}
-    smiles_to_scaffold.update({smiles: scaffold for scaffold, smiles_set in scaffold_to_smiles_2.items() for smiles in smiles_set})
-
+    smiles_to_scaffold = {
+        smiles: scaffold
+        for scaffold, smiles_set in scaffold_to_smiles_1.items()
+        for smiles in smiles_set
+    } | {
+        smiles: scaffold
+        for scaffold, smiles_set in scaffold_to_smiles_2.items()
+        for smiles in smiles_set
+    }
     # Determine similarity
     scaffolds_1, scaffolds_2 = set(scaffolds_1), set(scaffolds_2)
     smiles_1, smiles_2 = set(smiles_1), set(smiles_2)

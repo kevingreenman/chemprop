@@ -103,7 +103,7 @@ def load_phase_mask(path: str) -> List[List[int]]:
         r=csv.reader(rf)
         next(r)
         for line in r:
-            if any([x not in ['0','1'] for x in line[1:]]):
+            if any(x not in ['0', '1'] for x in line[1:]):
                 raise ValueError('Phase mask must contain only 0s and 1s, with 0s indicating exclusion regions.')
             data_line = [int(x) for x in line[1:]]
             data.append(data_line)

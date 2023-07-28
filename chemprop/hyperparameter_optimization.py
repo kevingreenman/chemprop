@@ -161,7 +161,7 @@ def hyperopt(args: HyperoptArgs) -> None:
                 f"Parameters assigned with random search, {random_remaining} random trials remaining"
             )
         else:
-            logger.info(f"Parameters assigned with TPE directed search")
+            logger.info("Parameters assigned with TPE directed search")
 
         fmin(
             fmin_objective,

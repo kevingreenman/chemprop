@@ -245,7 +245,7 @@ def predict_and_save(
                 for name in task_names
                 for i in range(args.multiclass_num_classes)
             ]
-            num_tasks = num_tasks * args.multiclass_num_classes
+            num_tasks *= args.multiclass_num_classes
         if args.uncertainty_method == "spectra_roundrobin":
             num_unc_tasks = 1
         else:
@@ -286,7 +286,7 @@ def predict_and_save(
             if args.uncertainty_method == "spectra_roundrobin":
                 unc_names = [estimator.label]
             else:
-                unc_names = [name + f"_{estimator.label}" for name in task_names]
+                unc_names = [f"{name}_{estimator.label}" for name in task_names]
 
             for pred_name, unc_name, pred, un in zip(
                 task_names, unc_names, d_preds, d_unc
@@ -297,7 +297,7 @@ def predict_and_save(
             if args.individual_ensemble_predictions:
                 for pred_name, model_preds in zip(task_names, ind_preds):
                     for idx, pred in enumerate(model_preds):
-                        datapoint.row[pred_name + f"_model_{idx}"] = pred
+                        datapoint.row[f"{pred_name}_model_{idx}"] = pred
 
         # Save
         with open(args.preds_path, 'w', newline="") as f:
@@ -317,22 +317,21 @@ def predict_and_save(
                 for i, evaluation_method in enumerate(args.evaluation_methods):
                     writer.writerow([evaluation_method] + evaluations[i])
 
-    if return_invalid_smiles:
-        full_preds = []
-        full_unc = []
-        for full_index in range(len(full_data)):
-            valid_index = full_to_valid_indices.get(full_index, None)
-            if valid_index is not None:
-                pred = preds[valid_index]
-                un = unc[valid_index]
-            else:
-                pred = ["Invalid SMILES"] * num_tasks
-                un = ["Invalid SMILES"] * num_unc_tasks
-            full_preds.append(pred)
-            full_unc.append(un)
-        return full_preds, full_unc
-    else:
+    if not return_invalid_smiles:
         return preds, unc
+    full_preds = []
+    full_unc = []
+    for full_index in range(len(full_data)):
+        valid_index = full_to_valid_indices.get(full_index, None)
+        if valid_index is not None:
+            pred = preds[valid_index]
+            un = unc[valid_index]
+        else:
+            pred = ["Invalid SMILES"] * num_tasks
+            un = ["Invalid SMILES"] * num_unc_tasks
+        full_preds.append(pred)
+        full_unc.append(un)
+    return full_preds, full_unc
 
 
 @timeit()

@@ -103,9 +103,7 @@ def bce(targets: List[int], preds: List[float]) -> float:
     """
     # Don't use logits because the sigmoid is added in all places except training itself
     bce_func = nn.BCELoss(reduction='mean')
-    loss = bce_func(target=torch.Tensor(targets), input=torch.Tensor(preds)).item()
-
-    return loss
+    return bce_func(target=torch.Tensor(targets), input=torch.Tensor(preds)).item()
 
 
 def rmse(targets: List[float], preds: List[float]) -> float:
@@ -226,12 +224,10 @@ def f1_metric(targets: List[int], preds: Union[List[float], List[List[float]]], 
     """
     if type(preds[0]) == list:  # multiclass
         hard_preds = [p.index(max(p)) for p in preds]
-        score = f1_score(targets, hard_preds, average='micro')
+        return f1_score(targets, hard_preds, average='micro')
     else: # binary prediction
-        hard_preds = [1 if p > threshold else 0 for p in preds]  
-        score = f1_score(targets, hard_preds)
-
-    return score
+        hard_preds = [1 if p > threshold else 0 for p in preds]
+        return f1_score(targets, hard_preds)
 
 
 def mcc_metric(targets: List[int], preds: Union[List[float], List[List[float]]], threshold: float = 0.5) -> float:

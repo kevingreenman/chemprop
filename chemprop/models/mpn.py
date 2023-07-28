@@ -110,14 +110,11 @@ class MPNEncoder(nn.Module):
             a2a = mol_graph.get_a2a().to(self.device)
 
         # Input
-        if self.atom_messages:
-            input = self.W_i(f_atoms)  # num_atoms x hidden_size
-        else:
-            input = self.W_i(f_bonds)  # num_bonds x hidden_size
+        input = self.W_i(f_atoms) if self.atom_messages else self.W_i(f_bonds)
         message = self.act_func(input)  # num_bonds x hidden_size
 
         # Message passing
-        for depth in range(self.depth - 1):
+        for _ in range(self.depth - 1):
             if self.undirected:
                 message = (message + message[b2revb]) / 2
 
@@ -175,7 +172,7 @@ class MPNEncoder(nn.Module):
             return atom_hiddens, a_scope, bond_hiddens, b_scope, b2br  # num_atoms x hidden, remove the first one which is zero padding
 
         mol_vecs = []
-        for i, (a_start, a_size) in enumerate(a_scope):
+        for a_start, a_size in a_scope:
             if a_size == 0:
                 mol_vecs.append(self.cached_zero_vector)
             else:
@@ -189,9 +186,7 @@ class MPNEncoder(nn.Module):
                     mol_vec = mol_vec.sum(dim=0) / self.aggregation_norm
                 mol_vecs.append(mol_vec)
 
-        mol_vecs = torch.stack(mol_vecs, dim=0)  # (num_molecules, hidden_size)
-
-        return mol_vecs  # num_molecules x hidden
+        return torch.stack(mol_vecs, dim=0)
 
 
 class MPN(nn.Module):
@@ -314,17 +309,16 @@ class MPN(nn.Module):
                                           'per input (i.e., number_of_molecules = 1).')
 
             encodings = [enc(ba, atom_descriptors_batch, bond_descriptors_batch) for enc, ba in zip(self.encoder, batch)]
-        else:
-            if not self.reaction_solvent:
-                encodings = [enc(ba) for enc, ba in zip(self.encoder, batch)]
-            else:
-                encodings = []
-                for ba in batch:
-                    if ba.is_reaction:
-                        encodings.append(self.encoder(ba))
-                    else:
-                        encodings.append(self.encoder_solvent(ba))
+        elif self.reaction_solvent:
+            encodings = []
+            for ba in batch:
+                if ba.is_reaction:
+                    encodings.append(self.encoder(ba))
+                else:
+                    encodings.append(self.encoder_solvent(ba))
 
+        else:
+            encodings = [enc(ba) for enc, ba in zip(self.encoder, batch)]
         output = encodings[0] if len(encodings) == 1 else torch.cat(encodings, dim=1)
 
         if self.use_input_features:
