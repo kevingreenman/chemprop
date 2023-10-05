@@ -29,7 +29,10 @@ def main():
             "Cannot add bias to make low fidelity data when model type is single fidelity"
         )
 
-    if args.model_type == "multi_fidelity_weight_sharing_non_diff" or args.model_type == "trad_delta_ml":
+    if args.model_type in [
+        "multi_fidelity_weight_sharing_non_diff",
+        "trad_delta_ml",
+    ]:
         raise NotImplementedError("Not implemented yet")
 
     # make unique folder for results of each run
@@ -78,7 +81,7 @@ def main():
     data_df = pd.read_csv(args.data_file, index_col="smiles")
 
     # So multiple noises can be added on top of one another
-    if not args.model_type == "single_fidelity":
+    if args.model_type != "single_fidelity":
         data_df[args.lf_col_name] = data_df[args.hf_col_name]
 
     if args.add_pn_bias_to_make_lf > 0:
@@ -108,7 +111,7 @@ def main():
         # Adding bias calculated from normalized descriptors to data_df LF column
         data_df[args.lf_col_name] = data_df[args.lf_col_name] + descriptor_bias(data_df, descriptors_coefficients)
 
-    if not args.model_type == "single_fidelity":
+    if args.model_type != "single_fidelity":
         export_and_plot_hf_lf_data(data_df, args)
 
     if args.model_type == "single_fidelity":
@@ -157,14 +160,14 @@ def main():
             test_oracle = data_df.loc[test_index][[args.lf_col_name]].values
             train_t = data_df.loc[train_index][[args.hf_col_name]].values
             test_t = data_df.loc[test_index][[args.hf_col_name]].values
-        
+
         else:
             # Setting nan to specify LF and HF
             lf_not_hf_index = list(set(lf_train_index + lf_test_index).difference(set(hf_train_index + hf_test_index)))
             data_df[args.hf_col_name].loc[lf_not_hf_index] = np.nan
             if not args.lf_superset_of_hf:
                 data_df[args.lf_col_name].loc[hf_train_index + hf_test_index] = np.nan
-            
+
             # Selecting the target values for each train and test
             # LF column must be first, HF second to work with expected order in loss function during training
             train_t = data_df.loc[train_index][[args.lf_col_name, args.hf_col_name]].values
@@ -205,7 +208,7 @@ def main():
 
     # Print sizes of datasets and splits
     print("Total dataset size:", len(data_df))
-    if not args.model_type == "single_fidelity":
+    if args.model_type != "single_fidelity":
         print("HF total size:", len(hf_df))
         print("HF train/val size:", len(hf_train_index))
         print("HF test size:", len(hf_test_index))
@@ -264,7 +267,10 @@ def main():
     else:
         if args.model_type == "multi_target":
             preds = np.array([x[0].numpy()[0] for x in preds])
-        elif args.model_type == "multi_fidelity" or args.model_type == "multi_fidelity_weight_sharing":  # TODO: (!) will this also work for multi-fidelity non-differentiable?
+        elif args.model_type in [
+            "multi_fidelity",
+            "multi_fidelity_weight_sharing",
+        ]:  # TODO: (!) will this also work for multi-fidelity non-differentiable?
             preds = np.array([[[x[0][0].numpy(), x[0][1].numpy()]] for x in preds]).reshape(len(preds), 2)
 
         # Both HF and LF targets are identical if the only difference in the original HF and LF was a bias term -- this is not a bug -- once normalized, the network should learn both the same way
