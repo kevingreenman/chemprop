@@ -83,7 +83,7 @@ def main():
         data_df["delta"] = data_df[args.hf_col_name] - data_df[args.lf_col_name]
         target_col_names = "delta"
 
-    
+
     else:
         # LF column must be first, HF second to work with expected order in loss function during training
         target_col_names = [args.lf_col_name, args.hf_col_name]
@@ -189,7 +189,10 @@ def main():
     else:
         if args.model_type == "multi_target":
             preds = np.array([x[0].numpy()[0] for x in preds])
-        elif args.model_type == "multi_fidelity" or args.model_type == "multi_fidelity_weight_sharing":  # TODO: (!) will this also work for multi-fidelity non-differentiable?
+        elif args.model_type in [
+            "multi_fidelity",
+            "multi_fidelity_weight_sharing",
+        ]:  # TODO: (!) will this also work for multi-fidelity non-differentiable?
             preds = np.array([[[x[0][0].numpy(), x[0][1].numpy()]] for x in preds]).reshape(len(preds), 2)
 
         # Both HF and LF targets are identical if the only difference in the original HF and LF was a bias term -- this is not a bug -- once normalized, the network should learn both the same way
