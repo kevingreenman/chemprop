@@ -142,7 +142,7 @@ def main():
         test_data = [data.MoleculeDatapoint(smi, t, features=o) for smi, t, o in zip(test_smiles, test_targets, test_oracles)]
 
     elif args.model_type == "transfer":
-        
+
         #Redundancy removed if hf_train_data = train_data 
         hf_train_data = [data.MoleculeDatapoint(smi, t) for smi, t in zip(hf_train_smiles, hf_train_targets)]
         lf_train_data = [data.MoleculeDatapoint(smi, t) for smi, t in zip(lf_train_smiles, lf_train_targets)]
@@ -209,12 +209,12 @@ def main():
     )
 
     if args.model_type == "transfer":
-        
+
         trainer.fit(mpnn, lf_train_loader, lf_val_loader)
         trainer.fit(mpnn, hf_train_loader, hf_val_loader)
         preds = trainer.predict(mpnn, hf_test_loader)
         test_smis = [x.smi for x in hf_test_data]
-        
+
     else:
 
         trainer.fit(mpnn, train_loader, val_loader)
@@ -257,7 +257,10 @@ def main():
     else:
         if args.model_type == "multi_target":
             preds = np.array([x[0].numpy()[0] for x in preds])
-        elif args.model_type == "multi_fidelity" or args.model_type == "multi_fidelity_weight_sharing":  # TODO: (!) will this also work for multi-fidelity non-differentiable?
+        elif args.model_type in [
+            "multi_fidelity",
+            "multi_fidelity_weight_sharing",
+        ]:  # TODO: (!) will this also work for multi-fidelity non-differentiable?
             preds = np.array([[[x[0][0].numpy(), x[0][1].numpy()]] for x in preds]).reshape(len(preds), 2)
 
         # Both HF and LF targets are identical if the only difference in the original HF and LF was a bias term -- this is not a bug -- once normalized, the network should learn both the same way
