@@ -150,9 +150,9 @@ def main():
         train_data = [data.MoleculeDatapoint(smi, t) for smi, t in zip(train_smiles, train_targets)]
         val_data = [data.MoleculeDatapoint(smi, t) for smi, t in zip(val_smiles, val_targets)]
         test_data = [data.MoleculeDatapoint(smi, t) for smi, t in zip(test_smiles, test_targets)]
-        
+
         if args.model_type == "transfer":
-        
+
             #Redundancy removed if hf_train_data = train_data 
             hf_train_data = [data.MoleculeDatapoint(smi, t) for smi, t in zip(hf_train_smiles, hf_train_targets)]
             hf_val_data = [data.MoleculeDatapoint(smi, t) for smi, t in zip(hf_val_smiles, hf_val_targets)]
@@ -205,11 +205,11 @@ def main():
     test_smis = [x.smi for x in test_data]
 
     if args.model_type == "transfer":
-        
+
         trainer.fit(mpnn, hf_train_loader, hf_val_loader)
         hf_preds = trainer.predict(mpnn, hf_test_loader)
         hf_test_smis = [x.smi for x in hf_test_data]
-        
+
 
     if args.model_type in ["single_fidelity", "transfer", "delta_ml", "trad_delta_ml", "transfer"]:
         preds = [x[0].item() for x in preds]
@@ -237,7 +237,7 @@ def main():
 
         print("Test set")
         mae, rmse, r2 = eval_metrics(targets, preds)
-        
+
         if args.model_type == "transfer":
             hf_mae, hf_rmse, hf_r2 = eval_metrics(hf_targets, hf_preds)  
 
@@ -246,8 +246,8 @@ def main():
         else:
             metrics_df = pd.DataFrame({"MAE_hf": [mae], "RMSE_hf": [rmse], "R2_hf": [r2],
                                    "MAE_lf": [np.nan], "RMSE_lf": [np.nan], "R2_lf": [np.nan]})
-        
-        
+
+
         metrics_df.to_csv("test_metrics.csv", index=False)
 
         if args.save_test_plot:
@@ -270,7 +270,10 @@ def main():
     else:
         if args.model_type == "multi_target":
             preds = np.array([x[0].numpy()[0] for x in preds])
-        elif args.model_type == "multi_fidelity" or args.model_type == "multi_fidelity_weight_sharing":  # TODO: (!) will this also work for multi-fidelity non-differentiable?
+        elif args.model_type in [
+            "multi_fidelity",
+            "multi_fidelity_weight_sharing",
+        ]:  # TODO: (!) will this also work for multi-fidelity non-differentiable?
             preds = np.array([[[x[0][0].numpy(), x[0][1].numpy()]] for x in preds]).reshape(len(preds), 2)
 
         # Both HF and LF targets are identical if the only difference in the original HF and LF was a bias term -- this is not a bug -- once normalized, the network should learn both the same way
