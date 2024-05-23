@@ -11,7 +11,7 @@ import pytorch_lightning as pl
 from pytorch_lightning import seed_everything
 import torch
 from rdkit import Chem
-from rdkit.Chem import Descriptors
+from rdkit.Chem import Descriptors, rdFingerprintGenerator
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 from sklearn.preprocessing import StandardScaler
 
@@ -19,7 +19,7 @@ from chemprop.v2 import data, featurizers, models
 from chemprop.v2.models import modules
 from noisefunctions import descriptor_bias, gauss_noise
 from splitfunctions import split_by_prop_dict
-from kernel_helper import *
+from kernel_helper import kernel_end2end
 
 
 def main():
@@ -59,14 +59,6 @@ def main():
 
     if args.model_type != "kernel":
         mpnn = choose_model(args.model_type, args.loss_mod)
-
-    # hf_mean = np.average(data_df[args.hf_col_name])
-    # hf_std = np.std(data_df[args.hf_col_name])
-    # lf_mean = np.average(data_df[args.lf_col_name])
-    # lf_std = np.std(data_df[args.lf_col_name])
-
-    # data_df[args.hf_col_name] = (data_df[args.hf_col_name] - hf_mean)/hf_std
-    # data_df[args.lf_col_name] = (data_df[args.lf_col_name] - lf_mean)/lf_std
 
     # Train-Val-Test Splits
     # Val and test are the same for LF and HF; train is separated later
@@ -488,8 +480,9 @@ def choose_model(model_type, loss_mod=1):
 
 
 def create_low_fidelity(data_df, args):
-    # So multiple noises can be added on top of one another
-    data_df[args.lf_col_name] = data_df[args.hf_col_name]
+    
+    if args.lf_col_name not in data_df.columns:
+        data_df[args.lf_col_name] = data_df[args.hf_col_name]
 
     if args.add_pn_bias_to_make_lf > 0:
         # Creating the coefficients for the polynomial function
@@ -637,9 +630,14 @@ def export_train_and_val(args, train_data, val_data, train_scaler):
     return
 
 def eval_metrics(targets, preds):
+    valid_indices = ~np.isnan(targets)
+    targets = targets[valid_indices]
+    preds = preds[valid_indices]
+
     mae = mean_absolute_error(targets, preds)
     rmse = mean_squared_error(targets, preds, squared=False)
     r2 = r2_score(targets, preds)
+
     print(f"MAE: {mae}")
     print(f"RMSE: {rmse}")
     print(f"R2: {r2}")
@@ -679,14 +677,14 @@ def add_args(parser: ArgumentParser):
         ],
     )
     parser.add_argument(
-        "--data_file", type=str, default="/home/temujin/chemprop-mf/tests/data/lambda.csv"
+        "--data_file", type=str, default="tests/data/gdb11_0.001.csv"
     )
     # choices=["multifidelity_joung_stda_tddft.csv", "gdb11_0.0001.csv" (too small), "gdb11_0.0001.csv", "dHsolv.csv", "pubchem.csv", "lambda.csv"]
     parser.add_argument(
-        "--hf_col_name", type=str, default="energy_max_osc_nm"
+        "--hf_col_name", type=str, default="h298"
     )  # choices=["h298", "lambda_maxosc_tddft", dHsolv_expt, "energy_max_osc_nm"]
     parser.add_argument(
-        "--lf_col_name", type=str, default="peakwavs_max", required=False
+        "--lf_col_name", type=str, default="h298_bias_1", required=False
     )  # choices=["h298_bias_1", "lambda_maxosc_stda", "dHsolv_cosmo", "peakwavs_max"]
     parser.add_argument("--scale_data", type=str2bool, default=False)
     parser.add_argument("--save_test_plot", type=str2bool, default=False)
